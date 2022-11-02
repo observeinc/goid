@@ -1,3 +1,3 @@
-module github.com/rpccloud/goid
+module github.com/observeinc/goid
 
-go 1.14
+go 1.18
