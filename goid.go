@@ -64,6 +64,7 @@ func fastGid() GoID {
 }
 
 // gidFromG casts the value at `g + offset` to a GoID
+//go:nocheckptr
 func gidFromG(g *g, offset int) GoID {
 	return *(*GoID)(unsafe.Pointer(uintptr(unsafe.Pointer(g)) + uintptr(offset)))
 }
