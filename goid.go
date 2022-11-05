@@ -34,8 +34,8 @@ var (
 
 const (
 	gidSize    = (int)(unsafe.Sizeof(GoID(0)))
-	gSize      = 4096 // We do not expect the "g" to be larger than a page
-	checkCount = 10   // Number of checks per candidate offset, by each voter
+	gSize      = 256 // If this library ever breaks, try to up this constant
+	checkCount = 10  // Number of checks per candidate offset, by each voter
 	voterCount = 10
 )
 
