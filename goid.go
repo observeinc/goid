@@ -2,6 +2,7 @@ package goid
 
 import (
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -12,14 +13,21 @@ type GoID int64
 
 // GetGoID gets the current goroutine id
 func GetGoID() GoID {
-	if gidOffset >= 0 {
+	if FastGetGoIDAvailable() {
 		return fastGid()
 	}
 	return slowGid()
 }
 
+// FastGetGoIDAvailable tells if a fast way to get current goroutine id is
+// available. GetGoID will use a very slow path otherwise
+func FastGetGoIDAvailable() bool {
+	return gidOffset >= 0
+}
+
 // getg returns the "g", a control block that holds runtime information about
 // the current goroutine. Implemented in Assembly.
+//
 //go:noescape
 func getg() *g
 
@@ -64,6 +72,7 @@ func fastGid() GoID {
 }
 
 // gidFromG casts the value at `g + offset` to a GoID
+//
 //go:nocheckptr
 func gidFromG(g *g, offset int) GoID {
 	return *(*GoID)(unsafe.Pointer(uintptr(unsafe.Pointer(g)) + uintptr(offset)))
@@ -76,11 +85,13 @@ func findGidOffset(startOffset, maxOffset int) (offset int) {
 	g := getg()
 
 	// Handle segmentation faults in case we run past the "g"
+	oldPanicOnFault := debug.SetPanicOnFault(true)
 	defer func() {
 		if r := recover(); r != nil {
 			offset = -1
 		}
 	}()
+	defer func() { debug.SetPanicOnFault(oldPanicOnFault) }()
 
 	if currGid != 0 && g != nil {
 		for offset = startOffset; offset < maxOffset; offset += gidSize {
@@ -93,7 +104,7 @@ func findGidOffset(startOffset, maxOffset int) (offset int) {
 }
 
 // checkGidOffset spawns a bunch of goroutines and tests whether the value
-// stored at `getg() + offset`` matches what is returned by slowGid(). Returns
+// stored at `getg() + offset` matches what is returned by slowGid(). Returns
 // true if and only if the value matches for all spawned goroutines.
 func checkGidOffset(offset int) bool {
 	ret := make(chan bool, checkCount)
