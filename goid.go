@@ -91,7 +91,7 @@ func findGidOffset(startOffset, maxOffset int) (offset int) {
 			offset = -1
 		}
 	}()
-	defer func() { debug.SetPanicOnFault(oldPanicOnFault) }()
+	defer debug.SetPanicOnFault(oldPanicOnFault)
 
 	if currGid != 0 && g != nil {
 		for offset = startOffset; offset < maxOffset; offset += gidSize {
